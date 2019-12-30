@@ -3,6 +3,7 @@ package hk
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"github.com/brutella/hc"
 	"github.com/brutella/hc/accessory"
 	"github.com/brutella/hc/characteristic"
@@ -10,22 +11,28 @@ import (
 )
 
 type Door struct {
-	Name      string
-	Opener    *GarageDoorOpener
-	Accessory *accessory.Accessory
+	Name string
+	*GarageDoorOpener
 	Transport hc.Transport
+	msgBroker *msg.Broker
 }
 
-func (d *Door) SetState(state int) {
-	d.Opener.GarageDoorOpener.CurrentDoorState.SetValue(state)
+func (d *Door) SetCurrentState(state int) {
+	d.Door.CurrentDoorState.SetValue(state)
+}
+
+func (d *Door) SetTargetState(state int) {
+	d.Door.TargetDoorState.SetValue(state)
 }
 
 func (d *Door) StopTransport() {
 	<-d.Transport.Stop()
 }
 
-func NewDoor(name string, config hc.Config, msgBroker *msg.Broker) *Door {
-	door := new(Door)
+func NewDoor(name string, config hc.Config, msgBroker *msg.Broker, initialState int) (*Door, error) {
+	door := Door{}
+
+	door.Name = name
 
 	doorInfo := accessory.Info{
 		Name:             name,
@@ -35,12 +42,11 @@ func NewDoor(name string, config hc.Config, msgBroker *msg.Broker) *Door {
 		FirmwareRevision: "1.0",
 	}
 
-	door.Opener = NewGarageDoorOpener(doorInfo)
-	door.Accessory = accessory.New(doorInfo, accessory.TypeGarageDoorOpener)
+	door.GarageDoorOpener = NewGarageDoorOpener(doorInfo)
 
 	transport, err := hc.NewIPTransport(config, door.Accessory)
 	if err != nil {
-		return &Door{}
+		return &Door{}, err
 	}
 
 	go func() {
@@ -49,16 +55,22 @@ func NewDoor(name string, config hc.Config, msgBroker *msg.Broker) *Door {
 
 	door.Transport = transport
 
+	door.msgBroker = msgBroker
+
 	door.Accessory.OnIdentify(func() {
-		msgBroker.Send("command", msg.NewCommand(door.Name, characteristic.TargetDoorStateOpen))
-		msgBroker.Send("command", msg.NewCommand(door.Name, characteristic.TargetDoorStateClosed))
+		door.msgBroker.Send("commands", msg.NewCommand(door.Name, characteristic.TargetDoorStateOpen))
+		door.msgBroker.Send("commands", msg.NewCommand(door.Name, characteristic.TargetDoorStateClosed))
 	})
 
-	door.Opener.GarageDoorOpener.TargetDoorState.OnValueRemoteUpdate(func(v int) {
-		msgBroker.Send("command", msg.NewCommand(door.Name, v))
+	door.GarageDoorOpener.Door.TargetDoorState.OnValueRemoteUpdate(func(v int) {
+		door.msgBroker.Send("commands", msg.NewCommand(door.Name, v))
 	})
 
-	return door
+	door.SetCurrentState(initialState)
+
+	fmt.Printf("Maked  door %v\n", door)
+
+	return &door, nil
 }
 
 func GenSerial(name string) string {

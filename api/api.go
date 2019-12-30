@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/brutella/hc/characteristic"
 	"hkporter/msg"
 	porterClient "porter/client"
@@ -10,22 +11,25 @@ import (
 type Broker struct {
 	client     *porterClient.Client
 	msgBroker  *msg.Broker
-	commands   chan *msg.Message
+	commands   *chan *msg.Message
 	monitorCtl chan int
 	states     map[string]time.Time
 }
 
-func Init(clientURI, key string, msgBroker *msg.Broker) {
+func NewBroker(clientURI, key string, msgBroker *msg.Broker) *Broker {
 	apiBroker := Broker{}
 
 	apiBroker.client = porterClient.NewClient()
 	apiBroker.client.HostURI = clientURI
 	apiBroker.client.APIKey = key
 
-	apiBroker.commands = make(chan *msg.Message, 5)
 	apiBroker.monitorCtl = make(chan int, 2)
+	apiBroker.states = make(map[string]time.Time)
 
-	msgBroker.Add("commands", &apiBroker.commands)
+	apiBroker.msgBroker = msgBroker
+	apiBroker.commands = msgBroker.Subscribe("commands")
+
+	return &apiBroker
 }
 
 func (b *Broker) Start() {
@@ -34,8 +38,6 @@ func (b *Broker) Start() {
 }
 
 func (b *Broker) stateMonitor() {
-	counter := 0
-
 	for {
 
 		select {
@@ -44,15 +46,17 @@ func (b *Broker) stateMonitor() {
 
 		default:
 			time.Sleep(1 * time.Second)
-			counter = (counter + 1) % 10
 
 			states, err := b.client.List()
 			if err != nil {
+				fmt.Printf("API: 410,757,864,530 DEAD DOORS: %v\n", err)
+				b.msgBroker.Send("status", msg.NewStatus("", msg.AllDoorsDead))
 				continue
 			}
 
 			for doorName, state := range states {
-				if val, _ := b.states[doorName]; state.LastStateChangeTimestamp == val && counter != 0 {
+				fmt.Printf("found door state %v\n", doorName)
+				if val, ok := b.states[doorName]; ok && state.LastStateChangeTimestamp == val {
 					continue
 				}
 
@@ -81,7 +85,7 @@ func (b *Broker) cmdMonitor() {
 		case <-b.monitorCtl:
 			return
 
-		case message := <-b.commands:
+		case message := <-*b.commands:
 			switch message.Action {
 
 			case characteristic.TargetDoorStateOpen:

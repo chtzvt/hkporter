@@ -8,6 +8,8 @@ type Status struct {
 	NewState int
 }
 
+const AllDoorsDead int = 0xDEAD11F7
+
 func NewStatus(door string, status int) *Message {
 	return &Message{
 		Type:     StatusMessage,
@@ -19,21 +21,21 @@ func NewStatus(door string, status int) *Message {
 }
 
 func (s *Status) Opening() {
-	s.Status = characteristic.CurrentDoorStateOpening
+	s.NewState = characteristic.CurrentDoorStateOpening
 }
 
 func (s *Status) Open() {
-	s.Status = characteristic.CurrentDoorStateOpen
+	s.NewState = characteristic.CurrentDoorStateOpen
 }
 
 func (s *Status) Closing() {
-	s.Status = characteristic.CurrentDoorStateClosing
+	s.NewState = characteristic.CurrentDoorStateClosing
 }
 
 func (s *Status) Closed() {
-	s.Status = characteristic.CurrentDoorStateClosed
+	s.NewState = characteristic.CurrentDoorStateClosed
 }
 
 func (s *Status) Stopped() {
-	s.Status = characteristic.CurrentDoorStateStopped
+	s.NewState = characteristic.CurrentDoorStateStopped
 }
