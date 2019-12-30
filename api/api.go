@@ -38,14 +38,16 @@ func (b *Broker) Start() {
 }
 
 func (b *Broker) stateMonitor() {
-	for {
+	counter := 0
 
+	for {
 		select {
 		case <-b.monitorCtl:
 			return
 
 		default:
 			time.Sleep(1 * time.Second)
+			counter = (counter + 1) % 5
 
 			states, err := b.client.List()
 			if err != nil {
@@ -56,7 +58,7 @@ func (b *Broker) stateMonitor() {
 
 			for doorName, state := range states {
 				fmt.Printf("found door state %v\n", doorName)
-				if val, ok := b.states[doorName]; ok && state.LastStateChangeTimestamp == val {
+				if val, ok := b.states[doorName]; counter != 0 && ok && state.LastStateChangeTimestamp == val {
 					continue
 				}
 
@@ -72,6 +74,8 @@ func (b *Broker) stateMonitor() {
 
 				b.msgBroker.Send("status", statusMsg)
 			}
+
+			counter++
 
 		}
 

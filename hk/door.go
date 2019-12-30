@@ -67,6 +67,7 @@ func NewDoor(name string, config hc.Config, msgBroker *msg.Broker, initialState 
 	})
 
 	door.SetCurrentState(initialState)
+	door.SetTargetState(initialState)
 
 	fmt.Printf("Maked  door %v\n", door)
 

@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// TODO: clean up CLI interface and add monitor to check for
 func main() {
 	hkPin := flag.String("pin", "", "HomeKit pairing PIN")
 	dbPath := flag.String("dbpath", "./db", "State database path (optional)")
