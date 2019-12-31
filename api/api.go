@@ -63,7 +63,7 @@ func (b *Broker) stateMonitor() {
 
 				statusMsg := msg.NewStatus(doorName, 0)
 
-				if int(state.State) == state.SensorClosedState {
+				if state.State == state.SensorClosedState {
 					statusMsg.Closed()
 				} else {
 					statusMsg.Open()
