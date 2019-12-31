@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"github.com/brutella/hc/characteristic"
 	"hkporter/msg"
 	porterClient "porter/client"
@@ -51,13 +50,11 @@ func (b *Broker) stateMonitor() {
 
 			states, err := b.client.List()
 			if err != nil {
-				fmt.Printf("API: 410,757,864,530 DEAD DOORS: %v\n", err)
 				b.msgBroker.Send("status", msg.NewStatus("", msg.AllDoorsDead))
 				continue
 			}
 
 			for doorName, state := range states {
-				fmt.Printf("found door state %v\n", doorName)
 				if val, ok := b.states[doorName]; counter != 0 && ok && state.LastStateChangeTimestamp == val {
 					continue
 				}
