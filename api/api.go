@@ -37,8 +37,6 @@ func (b *Broker) Start() {
 }
 
 func (b *Broker) stateMonitor() {
-	counter := 0
-
 	for {
 		select {
 		case <-b.monitorCtl:
@@ -46,7 +44,6 @@ func (b *Broker) stateMonitor() {
 
 		default:
 			time.Sleep(1 * time.Second)
-			counter = (counter + 1) % 5
 
 			states, err := b.client.List()
 			if err != nil {
@@ -55,7 +52,7 @@ func (b *Broker) stateMonitor() {
 			}
 
 			for doorName, state := range states {
-				if val, ok := b.states[doorName]; counter != 0 && ok && state.LastStateChangeTimestamp == val {
+				if val, ok := b.states[doorName]; ok && state.LastStateChangeTimestamp == val {
 					continue
 				}
 
@@ -71,9 +68,6 @@ func (b *Broker) stateMonitor() {
 
 				b.msgBroker.Send("status", statusMsg)
 			}
-
-			counter++
-
 		}
 
 	}
@@ -93,6 +87,7 @@ func (b *Broker) cmdMonitor() {
 				status, err := b.client.Open(message.DoorName)
 				if err == nil && status.Status == "OK" {
 					b.msgBroker.Send("status", msg.NewStatus(message.DoorName, characteristic.CurrentDoorStateOpening))
+					go b.cmdFollowupStateCheck(message.DoorName)
 				} else {
 					b.msgBroker.Send("status", msg.NewStatus(message.DoorName, characteristic.CurrentDoorStateStopped))
 				}
@@ -101,6 +96,7 @@ func (b *Broker) cmdMonitor() {
 				status, err := b.client.Close(message.DoorName)
 				if err == nil && status.Status == "OK" {
 					b.msgBroker.Send("status", msg.NewStatus(message.DoorName, characteristic.CurrentDoorStateClosing))
+					go b.cmdFollowupStateCheck(message.DoorName)
 				} else {
 					b.msgBroker.Send("status", msg.NewStatus(message.DoorName, characteristic.CurrentDoorStateStopped))
 				}
@@ -110,5 +106,15 @@ func (b *Broker) cmdMonitor() {
 			}
 		}
 
+	}
+}
+
+// Trigger an update of the HomeKit state 3 seconds after a command is sent
+// In the event of a failure to activate the lift, this ensures that the state shown in HomeKit is overwritten
+// with the true state of the door (from Opening/Closing)
+func (b *Broker) cmdFollowupStateCheck(doorName string) {
+	time.Sleep(3 * time.Second)
+	if _, ok := b.states[doorName]; ok {
+		b.states[doorName] = time.Now()
 	}
 }
