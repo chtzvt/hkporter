@@ -1,7 +1,6 @@
 package hk
 
 import (
-	"fmt"
 	"github.com/brutella/hc"
 	"hkporter/msg"
 	porterClient "porter/client"
@@ -49,7 +48,6 @@ func (s *Server) statusMonitor() {
 
 		case message := <-*s.statuses:
 			if message.NewState == msg.AllDoorsDead {
-				fmt.Printf("410,757,864,530 DEAD DOORS\n")
 				for _, door := range s.doors {
 					door.StopTransport()
 					delete(s.doors, door.Name)
