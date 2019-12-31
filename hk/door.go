@@ -3,7 +3,6 @@ package hk
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"fmt"
 	"github.com/brutella/hc"
 	"github.com/brutella/hc/accessory"
 	"github.com/brutella/hc/characteristic"
@@ -68,8 +67,6 @@ func NewDoor(name string, config hc.Config, msgBroker *msg.Broker, initialState 
 
 	door.SetCurrentState(initialState)
 	door.SetTargetState(initialState)
-
-	fmt.Printf("Maked  door %v\n", door)
 
 	return &door, nil
 }
