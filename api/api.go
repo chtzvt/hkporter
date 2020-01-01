@@ -95,19 +95,16 @@ func (b *Broker) cmdMonitor() {
 				status, err := b.client.Open(message.DoorName)
 				if err == nil && status.Status == "OK" {
 					b.msgBroker.Send("status", msg.NewStatus(message.DoorName, characteristic.CurrentDoorStateOpening))
-					go b.cmdFollowupStateCheck(message.DoorName)
-				} else {
-					b.msgBroker.Send("status", msg.NewStatus(message.DoorName, characteristic.CurrentDoorStateStopped))
 				}
+				go b.cmdFollowupStateCheck(message.DoorName)
 
 			case characteristic.TargetDoorStateClosed:
 				status, err := b.client.Close(message.DoorName)
 				if err == nil && status.Status == "OK" {
 					b.msgBroker.Send("status", msg.NewStatus(message.DoorName, characteristic.CurrentDoorStateClosing))
 					go b.cmdFollowupStateCheck(message.DoorName)
-				} else {
-					b.msgBroker.Send("status", msg.NewStatus(message.DoorName, characteristic.CurrentDoorStateStopped))
 				}
+				go b.cmdFollowupStateCheck(message.DoorName)
 
 			default:
 				continue
