@@ -43,7 +43,7 @@ func main() {
 	for {
 		select {
 		case <-sig:
-			fmt.Printf("[%v] HKPorter: Stopping server...\n", time.Now())
+			fmt.Printf("%v HKPorter: Stopping server...\n", time.Now())
 			apiBroker.Stop()
 			hkServer.Stop()
 			os.Exit(0)
