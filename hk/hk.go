@@ -4,6 +4,7 @@ import (
 	"github.com/brutella/hc"
 	"hkporter/msg"
 	porterClient "porter/client"
+	"time"
 )
 
 type Server struct {
@@ -34,19 +35,22 @@ func (s *Server) Start() {
 	go s.statusMonitor()
 }
 
+func (s *Server) Stop() {
+	s.monitorCtl<-0
+}
+
 func (s *Server) statusMonitor() {
 	for {
 
 		select {
 		case <-s.monitorCtl:
+			s.msgBroker.Remove("status")
+			s.killDoors()
 			return
 
 		case message := <-*s.statuses:
 			if message.NewState == msg.AllDoorsDead {
-				for _, door := range s.doors {
-					door.StopTransport()
-					delete(s.doors, door.Name)
-				}
+				s.killDoors()
 				continue
 			}
 
@@ -68,5 +72,13 @@ func (s *Server) statusMonitor() {
 
 		}
 
+	}
+}
+
+func (s *Server) killDoors() {
+	for _, door := range s.doors {
+		door.StopTransport()
+		time.Sleep(100 * time.Millisecond)
+		delete(s.doors, door.Name)
 	}
 }
