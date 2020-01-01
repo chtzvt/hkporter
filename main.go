@@ -2,10 +2,15 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/brutella/hc/log"
 	"hkporter/api"
 	"hkporter/hk"
 	"hkporter/msg"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 func main() {
@@ -30,7 +35,18 @@ func main() {
 	apiBroker := api.NewBroker(*apiURI, *apiKey, msgBroker)
 	go apiBroker.Start()
 
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt)
+	signal.Notify(sig, os.Kill)
+	signal.Notify(sig, syscall.SIGTERM)
+
 	for {
-		select {}
+		select {
+		case <-sig:
+			fmt.Printf("[%v] HKPorter: Stopping server...\n", time.Now())
+			apiBroker.Stop()
+			hkServer.Stop()
+			os.Exit(0)
+		}
 	}
 }
