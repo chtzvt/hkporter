@@ -37,8 +37,8 @@ func (b *Broker) Start() {
 }
 
 func (b *Broker) Stop() {
-	b.monitorCtl<-0
-	b.monitorCtl<-0
+	b.monitorCtl <- 0
+	b.monitorCtl <- 0
 }
 
 func (b *Broker) stateMonitor() {

@@ -36,7 +36,7 @@ func (s *Server) Start() {
 }
 
 func (s *Server) Stop() {
-	s.monitorCtl<-0
+	s.monitorCtl <- 0
 }
 
 func (s *Server) statusMonitor() {
