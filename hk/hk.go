@@ -26,11 +26,6 @@ func NewServer(hkpin, dbpath string, msgBroker *msg.Broker) *Server {
 	server.statuses = msgBroker.Subscribe("status")
 
 	server.hcCfg = hc.Config{Pin: hkpin, StoragePath: dbpath}
-	hc.OnTermination(func() {
-		for _, door := range server.doors {
-			door.StopTransport()
-		}
-	})
 
 	return &server
 }
