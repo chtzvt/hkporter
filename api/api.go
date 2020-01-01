@@ -36,10 +36,16 @@ func (b *Broker) Start() {
 	go b.cmdMonitor()
 }
 
+func (b *Broker) Stop() {
+	b.monitorCtl<-0
+	b.monitorCtl<-0
+}
+
 func (b *Broker) stateMonitor() {
 	for {
 		select {
 		case <-b.monitorCtl:
+			b.msgBroker.Send("status", msg.NewStatus("", msg.AllDoorsDead))
 			return
 
 		default:
@@ -78,6 +84,8 @@ func (b *Broker) cmdMonitor() {
 
 		select {
 		case <-b.monitorCtl:
+			b.msgBroker.Send("status", msg.NewStatus("", msg.AllDoorsDead))
+			b.msgBroker.Remove("commands")
 			return
 
 		case message := <-*b.commands:
