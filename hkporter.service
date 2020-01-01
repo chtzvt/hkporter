@@ -1,0 +1,15 @@
+[Unit]
+Description=Porter HomeKit Server
+After=syslog.target network-online.target porter.service
+
+[Service]
+Type=simple
+User=porter
+EnvironmentFile=/etc/default/hkporter
+ExecStart=/usr/local/bin/hkporter $HKPORTER_OPTS
+Restart=on-failure
+RestartSec=5
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
